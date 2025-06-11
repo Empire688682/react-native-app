@@ -4,6 +4,8 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <Text style={styles.welcomeText}>Welcome!</Text>
+      <Text style={styles.welcomeText}>Welcome!</Text>
+      <Text style={styles.welcomeText}>Welcome!</Text>
     </View>
   );
 };
@@ -13,10 +15,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor:"red"
   },
   welcomeText: {
-    color: "yellow",
-    backgroundColor: "black",
+    color: "white",
     padding: 26, 
   },
 });
