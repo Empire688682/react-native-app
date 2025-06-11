@@ -3,7 +3,7 @@ import { ID } from 'react-native-appwrite';
 import { account } from "./appwrite";
 
 // Create context with default value
-const AppContext = createContext();
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }){
   const [user, setUser] = useState(null);
@@ -14,6 +14,8 @@ export function AuthProvider({ children }){
   useEffect(() => {
     checkAuthStatus();
   }, []);
+
+  console.log("user:", user);
 
   const checkAuthStatus = async () => {
     try {
@@ -77,6 +79,8 @@ export function AuthProvider({ children }){
       
       // Automatically log in after signup
       const loginResult = await login(email, password);
+
+      console.log("loginResult:", loginResult)
       
       if (loginResult.success) {
         return { success: true, message: 'Account created successfully!' };
@@ -175,14 +179,14 @@ export function AuthProvider({ children }){
   };
 
   return (
-    <AppContext.Provider value={value}>
+    <AuthContext.Provider value={value}>
       {children}
-    </AppContext.Provider>
+    </AuthContext.Provider>
   );
 };
 
 export const useAuthContext = () => {
-  const context = useContext(AppContext);
+  const context = useContext(AuthContext);
   
   // Ensure context is used within provider
   if (context === undefined) {

@@ -1,32 +1,59 @@
 import {KeyboardAvoidingView, Platform, View, StyleSheet} from "react-native";
 import {Button, Text, TextInput, Snackbar} from "react-native-paper";
 import { useState } from "react";
+import { useAuthContext } from "@/lib/AuthContext";
 
 const AuthScreen = () => {
+  const {login, signup, isLoading} = useAuthContext(); // Added isLoading
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
-  const showToast = (message: string) => {
+  const showToast = (message) => {
     setSnackbarMessage(message);
     setSnackbarVisible(true);
   };
 
-  const handleAuth = () => {
+  const handleAuth = async () => {
     if(!email || !password){
       showToast("Please fill in all fields");
       return;
     }
 
     if(password.length < 8){
-      showToast("Password must at least longer than 7 character");
+      showToast("Password must be at least 8 characters long");
       return;
     }
     
-    // Add your authentication logic here
-    showToast(isSignUp ? "Account created successfully!" : "Welcome back!");
+    try {
+      let result;
+      
+      if (isSignUp) {
+        // Sign up logic
+        result = await signup(email, password);
+      } else {
+        // Sign in logic
+        result = await login(email, password);
+      }
+      
+      console.log("Auth result:", result);
+      
+      if (result.success) {
+        // Clear form on success
+        setEmail("");
+        setPassword("");
+        showToast(result.message);
+        // Navigation will be handled by your layout component
+      } else {
+        // Show error message
+        showToast(result.message);
+      }
+    } catch (error) {
+      console.error("Auth error:", error);
+      showToast("An unexpected error occurred. Please try again.");
+    }
   }
 
   const handleSwitchMode = () => {
@@ -56,6 +83,7 @@ const AuthScreen = () => {
             keyboardType="email-address"
             autoComplete="email"
             mode="outlined"
+            disabled={isLoading} // Disable when loading
           />
           <TextInput 
             label="Password"
@@ -65,11 +93,14 @@ const AuthScreen = () => {
             autoCapitalize="none" 
             secureTextEntry={true}
             mode="outlined"
+            disabled={isLoading} // Disable when loading
           />
           <Button 
             style={styles.button} 
             mode="contained" 
             onPress={handleAuth}
+            loading={isLoading} // Show loading spinner
+            disabled={isLoading} // Disable when loading
           >
             {isSignUp ? "Sign Up" : "Sign In"}
           </Button>
@@ -77,6 +108,7 @@ const AuthScreen = () => {
             style={styles.switchModeButton} 
             mode="text" 
             onPress={handleSwitchMode}
+            disabled={isLoading} // Disable when loading
           >
             {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
           </Button>
@@ -111,6 +143,7 @@ const styles = StyleSheet.create({
   title: {
     textAlign: 'center',
     marginBottom: 24,
+    fontWeight: 'bold',
   },
   input: {
     marginBottom: 16,
