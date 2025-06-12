@@ -47,6 +47,7 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
     "eslint-import-resolver-typescript": "^4.4.3",
+    "expo-linear-gradient": "^14.1.5",
     "typescript": "~5.8.3"
   },
   "private": true
