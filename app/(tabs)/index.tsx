@@ -63,7 +63,7 @@ export default function Index() {
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={['#667eea', '#764ba2']}
+        colors={['#67eea', '#764ba2']}
         style={styles.headerGradient}
       >
         <View style={styles.header}>
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   headerGradient: {
-    paddingTop: 20,
+    paddingTop: 10,
   },
   header: {
     flexDirection: 'row',
