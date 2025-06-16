@@ -2,9 +2,10 @@ import { KeyboardAvoidingView, Platform, View, StyleSheet } from "react-native";
 import { Button, Text, TextInput, Snackbar } from "react-native-paper";
 import { useEffect, useState } from "react";
 import { useAuthContext } from "@/lib/AuthContext";
+import axios from "axios";
 
 const AuthScreenGuide = ({ children }) => {
-  const { login, isAuthenticated, router } = useAuthContext();
+  const { isAuthenticated, router } = useAuthContext();
   useEffect(() => {
     const timer = setTimeout(() => {
       if (isAuthenticated) {
@@ -20,31 +21,67 @@ const AuthScreenGuide = ({ children }) => {
 const AuthScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Optimized signup function
+  const signup = async () => {
+    if (!email || !password || !name) {
+      showToast("All field are required");
+      return;
+    }
+    const userData = {
+      name:name,
+      email:email,
+      password:password
+    }
+    try {
+      setIsLoading(true);
+      const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + "users", userData);
+      console.log("response:", response);
+    } catch (error) {
+      console.log("SigupError:", error);
+      showToast(error.response.data.error);
+    }
+    finally{
+      setIsLoading(false)
+    }
+  };
+
+  // Login function with better error handling
+  const login = async () => {
+      if (!email || !password) {
+      showToast("All field are required");
+      return;
+    }
+    try {
+      setIsLoading(true);
+    } catch (error) {
+      console.log("SigupError:", error)
+    }
+    finally{
+      setIsLoading(false)
+    }
+  };
+
+  const handleAuth = () => {
+    if(isSignUp){
+      signup();
+      return;
+    }
+    else{
+      login();
+      return;
+    }
+  }
 
   const showToast = (message) => {
     setSnackbarMessage(message);
     setSnackbarVisible(true);
   };
-
-  const handleAuth = () => {
-    if (!email || !password) {
-      showToast("Please fill in all fields");
-      return;
-    }
-
-    if (password.length < 8) {
-      showToast("Password must at least longer than 7 character");
-      return;
-    }
-
-    // Add your authentication logic here
-    setEmail("");
-    setPassword("");
-    showToast(isSignUp ? "Account created successfully!" : "Welcome back!");
-  }
 
   const handleSwitchMode = () => {
     setEmail("");
@@ -64,6 +101,18 @@ const AuthScreen = () => {
           </Text>
 
           <View>
+            {
+              isSignUp && (
+                <TextInput
+                  label="Name"
+                  style={styles.input}
+                  placeholder="Your name"
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="none"
+                />
+              )
+            }
             <TextInput
               label="Email"
               style={styles.input}
@@ -72,8 +121,7 @@ const AuthScreen = () => {
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
-              autoComplete="email"
-              mode="outlined"
+
             />
             <TextInput
               label="Password"
@@ -82,29 +130,39 @@ const AuthScreen = () => {
               onChangeText={setPassword}
               autoCapitalize="none"
               secureTextEntry={true}
-              mode="outlined"
             />
             <Button
               style={styles.button}
               mode="contained"
               onPress={handleAuth}
+              textColor="white"
             >
-              {isSignUp ? "Sign Up" : "Sign In"}
+              {
+                isLoading? "Processing...." 
+                : 
+                <>
+                {isSignUp ? "Sign Up" : "Sign In"}
+                </>
+              }
             </Button>
-            <Button
+            <Text
               style={styles.switchModeButton}
               mode="text"
               onPress={handleSwitchMode}
             >
               {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
-            </Button>
+            </Text>
           </View>
         </View>
 
         <Snackbar
+          style={styles.snack}
           visible={snackbarVisible}
           onDismiss={() => setSnackbarVisible(false)}
           duration={3000}
+          theme={{
+            colors: "coral"
+          }}
           action={{
             label: 'Dismiss',
             onPress: () => setSnackbarVisible(false),
@@ -120,7 +178,7 @@ const AuthScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "white"
   },
   content: {
     flex: 1,
@@ -130,17 +188,24 @@ const styles = StyleSheet.create({
   title: {
     textAlign: 'center',
     marginBottom: 24,
+    color:"black"
   },
   input: {
     marginBottom: 16,
   },
   button: {
     marginTop: 8,
-    backgroundColor: "green"
+    backgroundColor:"green",
   },
   switchModeButton: {
     marginTop: 16,
+    color:"black",
+    textAlign: "center"
   },
+  snack: {
+    backgroundColor:"red",
+    color: "white"
+  }
 });
 
 export default AuthScreen;
