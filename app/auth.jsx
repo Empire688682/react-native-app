@@ -3,6 +3,7 @@ import { Button, Text, TextInput, Snackbar } from "react-native-paper";
 import { useEffect, useState } from "react";
 import { useAuthContext } from "@/lib/AuthContext";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AuthScreenGuide = ({ children }) => {
   const { isAuthenticated, router } = useAuthContext();
@@ -13,7 +14,7 @@ const AuthScreenGuide = ({ children }) => {
       }
     }, 0);
     return () => clearTimeout(timer);
-  }, [])
+  }, []);
 
   return <>{children}</>
 }
@@ -27,32 +28,53 @@ const AuthScreen = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Optimized signup function
   const signup = async () => {
     if (!email || !password || !name) {
-      showToast("All field are required");
+      showToast("All fields are required");
       return;
     }
-    const userData = {
-      name: name,
-      email: email,
-      password: password
-    }
+
+    const newUser = {
+      name,
+      email,
+      password,
+    };
+
     try {
       setIsLoading(true);
-      const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + "users", userData);
+
+      const response = await axios.post(
+        process.env.EXPO_PUBLIC_API_URL + "users",
+        newUser
+      );
+
       const { token, user } = response.data;
-      console.log('User created:', user);
-      console.log('Token:', token);
-      return { user, token };
+
+      // Save to AsyncStorage
+      const userDataToSave = JSON.stringify({
+        token: token,
+        username: user.name,
+        email: user.email, // fixed typo: was "eamil"
+      });
+
+      await AsyncStorage.setItem("userData", userDataToSave);
+
+      setName("");
+      setPassword("");
+      setEmail("");
+
+      // Optional: Manually tell your AuthContext to re-check AsyncStorage
+      // Example: call context.refresh() or navigate
+      router.replace("/(tabs)");
+
     } catch (error) {
-      console.log("SigupError:", error);
-      showToast(error.response.data.error);
-    }
-    finally {
-      setIsLoading(false)
+      console.log("SignupError:", error?.response?.data || error.message);
+      showToast(error?.response?.data?.error || "Signup failed");
+    } finally {
+      setIsLoading(false);
     }
   };
+
 
   // Login function with better error handling
   const login = async () => {

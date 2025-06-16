@@ -1,16 +1,26 @@
 import React, { useContext, createContext, useState, useEffect } from "react";
-import { ID } from 'react-native-appwrite';
-import { account } from "./appwrite";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Create context with default value
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }){
   const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
    const router = useRouter();
 
-  const isAuthenticated = user !== null
+   useEffect(()=>{
+    const loadUserData = async () =>{
+      const userData = await AsyncStorage.getItem("userData");
+      if(userData){
+        const parsed = JSON.parse(userData);
+        setUser(parsed);
+        setIsAuthenticated(true);
+      }
+    }
+    loadUserData();
+   }, []);
 
   console.log("isAuthenticated:", isAuthenticated)
 
