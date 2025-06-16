@@ -34,26 +34,29 @@ const AuthScreen = () => {
       return;
     }
     const userData = {
-      name:name,
-      email:email,
-      password:password
+      name: name,
+      email: email,
+      password: password
     }
     try {
       setIsLoading(true);
       const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + "users", userData);
-      console.log("response:", response);
+      const { token, user } = response.data;
+      console.log('User created:', user);
+      console.log('Token:', token);
+      return { user, token };
     } catch (error) {
       console.log("SigupError:", error);
       showToast(error.response.data.error);
     }
-    finally{
+    finally {
       setIsLoading(false)
     }
   };
 
   // Login function with better error handling
   const login = async () => {
-      if (!email || !password) {
+    if (!email || !password) {
       showToast("All field are required");
       return;
     }
@@ -62,17 +65,17 @@ const AuthScreen = () => {
     } catch (error) {
       console.log("SigupError:", error)
     }
-    finally{
+    finally {
       setIsLoading(false)
     }
   };
 
   const handleAuth = () => {
-    if(isSignUp){
+    if (isSignUp) {
       signup();
       return;
     }
-    else{
+    else {
       login();
       return;
     }
@@ -138,11 +141,11 @@ const AuthScreen = () => {
               textColor="white"
             >
               {
-                isLoading? "Processing...." 
-                : 
-                <>
-                {isSignUp ? "Sign Up" : "Sign In"}
-                </>
+                isLoading ? "Processing...."
+                  :
+                  <>
+                    {isSignUp ? "Sign Up" : "Sign In"}
+                  </>
               }
             </Button>
             <Text
@@ -188,22 +191,22 @@ const styles = StyleSheet.create({
   title: {
     textAlign: 'center',
     marginBottom: 24,
-    color:"black"
+    color: "black"
   },
   input: {
     marginBottom: 16,
   },
   button: {
     marginTop: 8,
-    backgroundColor:"green",
+    backgroundColor: "green",
   },
   switchModeButton: {
     marginTop: 16,
-    color:"black",
+    color: "black",
     textAlign: "center"
   },
   snack: {
-    backgroundColor:"red",
+    backgroundColor: "red",
     color: "white"
   }
 });
