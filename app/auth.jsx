@@ -20,6 +20,7 @@ const AuthScreenGuide = ({ children }) => {
 }
 
 const AuthScreen = () => {
+  const {refresh} = useAuthContext()
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -28,6 +29,7 @@ const AuthScreen = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  //create new user
   const signup = async () => {
     if (!email || !password || !name) {
       showToast("All fields are required");
@@ -44,7 +46,7 @@ const AuthScreen = () => {
       setIsLoading(true);
 
       const response = await axios.post(
-        process.env.EXPO_PUBLIC_API_URL + "users",
+        process.env.EXPO_PUBLIC_API_URL + "auth/signup",
         newUser
       );
 
@@ -62,10 +64,7 @@ const AuthScreen = () => {
       setName("");
       setPassword("");
       setEmail("");
-
-      // Optional: Manually tell your AuthContext to re-check AsyncStorage
-      // Example: call context.refresh() or navigate
-      router.replace("/(tabs)");
+      await refresh();
 
     } catch (error) {
       console.log("SignupError:", error?.response?.data || error.message);
@@ -75,20 +74,46 @@ const AuthScreen = () => {
     }
   };
 
-
-  // Login function with better error handling
-  const login = async () => {
+//login user
+  const signin = async () => {
     if (!email || !password) {
-      showToast("All field are required");
+      showToast("All fields are required");
       return;
     }
+
+    const existingUser = {
+      email,
+      password,
+    };
+
     try {
       setIsLoading(true);
+
+      const response = await axios.post(
+        process.env.EXPO_PUBLIC_API_URL + "auth/signin",
+        existingUser
+      );
+
+      const { token, user } = response.data;
+
+      // Save to AsyncStorage
+      const userDataToSave = JSON.stringify({
+        token: token,
+        username: user.name,
+        email: user.email, // fixed typo: was "eamil"
+      });
+
+      await AsyncStorage.setItem("userData", userDataToSave);
+
+      setPassword("");
+      setEmail("");
+      await refresh();
+
     } catch (error) {
-      console.log("SigupError:", error)
-    }
-    finally {
-      setIsLoading(false)
+      console.log("SignupError:", error?.response?.data || error.message);
+      showToast(error?.response?.data?.error || "Signup failed");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -98,7 +123,7 @@ const AuthScreen = () => {
       return;
     }
     else {
-      login();
+      signin();
       return;
     }
   }
