@@ -8,12 +8,12 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Index() {
-const {user, router} = useAuthContext();
+const {user, setIsAuthenticated} = useAuthContext();
 
 const logout = async () => {
   try {
     await AsyncStorage.multiRemove(['userData']);
-    router.replace('/(tabs)');                  
+    setIsAuthenticated(false);               
   } catch (err) {
     console.warn('Logout failed', err);
   }

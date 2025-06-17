@@ -2,25 +2,24 @@ import { KeyboardAvoidingView, Platform, View, StyleSheet } from "react-native";
 import { Button, Text, TextInput, Snackbar } from "react-native-paper";
 import { useEffect, useState } from "react";
 import { useAuthContext } from "@/lib/AuthContext";
+import { useRouter } from "expo-router";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AuthScreenGuide = ({ children }) => {
-  const { isAuthenticated, router } = useAuthContext();
+  const { isAuthenticated } = useAuthContext();
+  const router = useRouter()
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (isAuthenticated) {
+    if (isAuthenticated) {
         router.replace("/(tabs)");
       }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
+  }, [isAuthenticated]);
 
   return <>{children}</>
 }
 
 const AuthScreen = () => {
-  const {refresh} = useAuthContext()
+  const {refresh, user} = useAuthContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -28,6 +27,8 @@ const AuthScreen = () => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  console.log("user:", user)
 
   //create new user
   const signup = async () => {
