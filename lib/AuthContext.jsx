@@ -1,5 +1,6 @@
 import React, { useContext, createContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 // Create context with default value
 const AuthContext = createContext(null);
@@ -7,6 +8,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }){
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userHabits, setUserHabits] = useState([]);
 
    useEffect(()=>{
     const loadUserData = async () =>{
@@ -31,12 +33,35 @@ export function AuthProvider({ children }){
     }
   };
 
+    const getUserHabits = async() =>{
+      try {
+        const response = await axios.get(
+          process.env.EXPO_PUBLIC_API_URL + `habit/user-habits/${user.id}`
+        );
+  
+        if(response.status === 201){
+          if(response.data.length < 1){
+            setUserHabits([]);
+          }
+          else{
+            setUserHabits(response.data);
+          }
+          return;
+        }
+      } catch (error) {
+        console.log("getUserHabitsError:", error)
+      };
+    }
+
   return (
     <AuthContext.Provider value={{
     user,
     isAuthenticated,
     setIsAuthenticated,
-    refresh
+    refresh,
+    getUserHabits,
+    setUserHabits,
+    userHabits
   }}>
       {children}
     </AuthContext.Provider>

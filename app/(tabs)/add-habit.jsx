@@ -3,9 +3,10 @@ import { useState } from "react";
 import {View, StyleSheet} from "react-native";
 import axios from "axios";
 import { TextInput, SegmentedButtons, Button, Snackbar } from "react-native-paper";
+import { useRouter } from "expo-router";
 
 export default function AddHabit() {
-  const {user} = useAuthContext();
+  const {user, getUserHabits} = useAuthContext();
   const frequencies = ["daily", "weekly", "monthly"];
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -13,6 +14,8 @@ export default function AddHabit() {
   const [snackBarMessage, setSnackBarMessage] = useState("");
   const [showSnackBar, setShowSnackBar] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const router = useRouter()
 
   const showToast = (message) =>{
     setSnackBarMessage(message);
@@ -38,20 +41,20 @@ export default function AddHabit() {
         habitData
       );
 
-      console.log("response:", response);
-
       if(response.status === 201){
         setTitle("");
         setDescription("");
-        setFrequency("daily")
+        setFrequency("daily");
         showToast("Habit Added");
+        getUserHabits();
+        router.push("/")
       }
       
     } catch (error) {
       console.log("Error:", error);
       showToast(error.response.data.error || "An error occured");
     }finally{
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
