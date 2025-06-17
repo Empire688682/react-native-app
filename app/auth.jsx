@@ -19,7 +19,7 @@ const AuthScreenGuide = ({ children }) => {
 }
 
 const AuthScreen = () => {
-  const {refresh, user} = useAuthContext();
+  const {refresh} = useAuthContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -27,8 +27,6 @@ const AuthScreen = () => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  console.log("user:", user)
 
   //create new user
   const signup = async () => {
@@ -95,12 +93,15 @@ const AuthScreen = () => {
         existingUser
       );
 
+      console.log("response:", response)
+
       const { token, user } = response.data;
 
       // Save to AsyncStorage
       const userDataToSave = JSON.stringify({
         token: token,
         username: user.name,
+        id: user.id,
         email: user.email, // fixed typo: was "eamil"
       });
 

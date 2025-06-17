@@ -31,9 +31,6 @@ export function AuthProvider({ children }){
     }
   };
 
-  console.log("isAuthenticated:", isAuthenticated);
-  console.log("user:", user);
-
   return (
     <AuthContext.Provider value={{
     user,
