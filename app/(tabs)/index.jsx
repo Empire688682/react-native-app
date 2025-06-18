@@ -1,146 +1,175 @@
-import { useAuthContext } from "@/lib/AuthContext";
+// app/(tabs)/index.jsx
+import React, { useCallback, useRef } from "react";
 import {
-  Text,
-  View,
-  StyleSheet,
-  TouchableOpacity,
   ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import {
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import { useEffect, useState } from "react";
+import { useAuthContext } from "@/lib/AuthContext";
 
-export default function Index() {
+export default function HomeScreen() {
   const {
-     setIsAuthenticated,
-     getUserHabits,
-     userHabits
-     } = useAuthContext();
+    setIsAuthenticated,
+    getUserHabits,
+    userHabits = [],      
+  } = useAuthContext();
 
+  /* ────────── nav & scroll setup ────────── */
+  const { scrollTo } = useLocalSearchParams();  
+  const router = useRouter();
+  const scrollRef = useRef(null);
+
+  /* Scroll when screen gains focus */
+  useFocusEffect(
+    useCallback(() => {
+      if (scrollTo === "bottom") {
+        requestAnimationFrame(() => {
+          scrollRef.current?.scrollToEnd({ animated: true });
+          router.setParams({ scrollTo: undefined });
+        });
+      }
+    }, [scrollTo, router])
+  );
+
+  /* Refresh habits whenever the screen is focused */
+  useFocusEffect(
+    useCallback(() => {
+      getUserHabits();
+    }, [getUserHabits])
+  );
+
+  /* Logout */
   const logout = async () => {
     try {
-      await AsyncStorage.multiRemove(['userData']);
+      await AsyncStorage.removeItem("userData");
       setIsAuthenticated(false);
     } catch (err) {
-      console.warn('Logout failed', err);
+      console.warn("Logout failed:", err);
     }
   };
 
-  useEffect(()=>{
-   getUserHabits()
-  },[])
-
+  /* ───────────── render ───────────── */
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerText}>Today's Habits</Text>
-        <TouchableOpacity onPress={logout} style={styles.logoutButtonContainer}>
-          <MaterialCommunityIcons name="logout" size={20} color="white" style={styles.logoutButton} />
-          Sign out
+
+        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+          <MaterialCommunityIcons name="logout" size={18} color="#fff" />
+          <Text style={styles.logoutButtonText}>Sign out</Text>
         </TouchableOpacity>
       </View>
-      {
-        userHabits.length < 1? 
-        <Text style={styles.noHabit}>"Ouch No habit found!</Text>
-        :
-        <ScrollView >
-        {
-        userHabits.map((data, id) => (
-          <View style={styles.contentContainer} key={id}>
-            <Text style={styles.title}>
-              {data.title}
-            </Text>
-            <Text style={styles.description}>
-              {data.description}
-            </Text>
-            <View style={styles.footer}>
-              <View style={styles.streak}>
-                <FontAwesome5 name="fire" size={20} color="coral" />
-                <Text>{data.streak} days streaks</Text>
+
+      {/* Content */}
+      {userHabits.length === 0 ? (
+        <Text style={styles.noHabitText}>Ouch! No habit found 🙃</Text>
+      ) : (
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        >
+          {userHabits.map((habit) => (
+            <View
+              style={styles.card}
+              key={habit._id ?? habit.title}
+            >
+              <Text style={styles.title}>{habit.title}</Text>
+              <Text style={styles.description}>{habit.description}</Text>
+
+              <View style={styles.cardFooter}>
+                <View style={styles.streak}>
+                  <FontAwesome5 name="fire" size={18} color="coral" />
+                  <Text style={styles.streakText}>
+                    {habit.streak}‑day streak
+                  </Text>
+                </View>
+
+                <Text style={styles.frequency}>{habit.frequency}</Text>
               </View>
-              <Text style={styles.frequency}>
-                {data.frequency}
-              </Text>
             </View>
-          </View>
-        ))
-      }
-      </ScrollView>
-      }
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 }
 
+/* ───────────── styles ───────────── */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16
+    padding: 16,
+    backgroundColor: "#fff",
   },
   header: {
-    display: "flex",
-    justifyContent: "space-between",
     flexDirection: "row",
-    paddingBottom:15
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingBottom: 12,
   },
   headerText: {
     fontSize: 22,
-    fontWeight: "bold",
+    fontWeight: "700",
+    color: "#111",
   },
-  logoutButtonContainer: {
-    display: "flex",
+  logoutButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 6,
     backgroundColor: "coral",
     paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 5,
-    color: "white"
+    paddingVertical: 4,
+    borderRadius: 6,
   },
-  noHabit:{
-    textAlign:"center",
-    fontFamily:"cursev",
-    fontSize:18,
-    padding:10,
-    marginTop:25
+  logoutButtonText: {
+    color: "#fff",
+    fontWeight: "600",
   },
-  contentContainer: {
-    marginTop: 25,
-    padding: 6,
+  noHabitText: {
+    textAlign: "center",
+    fontSize: 18,
+    marginTop: 40,
+    color: "#444",
+    fontFamily: "cursive",
+  },
+  card: {
+    marginTop: 20,
+    padding: 14,
+    borderRadius: 8,
+    backgroundColor: "#fafafa",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  title: {
-    fontWeight: "700",
-    fontSize: 16,
-    paddingBottom: 10
-  },
-  description: {
-    paddingBottom: 20
-  },
-  footer: {
-    display: "flex",
+  title: { fontSize: 16, fontWeight: "700", marginBottom: 6 },
+  description: { marginBottom: 12, color: "#555" },
+  cardFooter: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    padding: 10
-  },
-  streak: {
-    display: "flex",
-    flexDirection: "row",
     alignItems: "center",
-    gap: 4
   },
+  streak: { flexDirection: "row", alignItems: "center", gap: 4 },
+  streakText: { color: "orange", fontWeight: "600" },
   frequency: {
     backgroundColor: "gray",
-    color: "white",
-    paddingHorizontal: 15,
-    paddingVertical: 5,
-    borderRadius: 5,
-    textTransform: "capitalize"
-  }
+    color: "#fff",
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    borderRadius: 4,
+    textTransform: "capitalize",
+    overflow: "hidden",
+  },
 });
