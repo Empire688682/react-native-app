@@ -6,7 +6,7 @@ import { TextInput, SegmentedButtons, Button, Snackbar } from "react-native-pape
 import { useRouter } from "expo-router";
 
 export default function AddHabit() {
-  const {user, getUserHabits} = useAuthContext();
+  const {user} = useAuthContext();
   const frequencies = ["daily", "weekly", "monthly"];
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -46,7 +46,6 @@ export default function AddHabit() {
         setDescription("");
         setFrequency("daily");
         showToast("Habit Added");
-        await getUserHabits();
         router.push({pathname:"/", params:{scrollTo:"bottom"}});
         window.scrollTo(-100, 0);
       }

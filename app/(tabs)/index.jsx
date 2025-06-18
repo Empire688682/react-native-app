@@ -1,7 +1,6 @@
 // app/(tabs)/index.jsx
 import React, { useCallback, useRef } from "react";
 import {
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,40 +14,49 @@ import {
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SwipeListView } from "react-native-swipe-list-view";
 import { useAuthContext } from "@/lib/AuthContext";
 
 export default function HomeScreen() {
   const {
     setIsAuthenticated,
     getUserHabits,
-    userHabits = [],      
+    userHabits = [],
+    deleteHabit,         // ⬅️ expose these from your context / API helpers
+    completeHabit,
+    user
   } = useAuthContext();
 
-  /* ────────── nav & scroll setup ────────── */
-  const { scrollTo } = useLocalSearchParams();  
   const router = useRouter();
-  const scrollRef = useRef(null);
 
-  /* Scroll when screen gains focus */
+  /* ------------------------------------------------------------------ */
+  /*  Auto‑scroll to bottom when the screen receives  ?scrollTo=bottom  */
+  /* ------------------------------------------------------------------ */
+  const listRef = useRef(null);                 // ref to the SwipeListView
+  const { scrollTo } = useLocalSearchParams();  // e.g. "bottom"
+
   useFocusEffect(
     useCallback(() => {
       if (scrollTo === "bottom") {
         requestAnimationFrame(() => {
-          scrollRef.current?.scrollToEnd({ animated: true });
-          router.setParams({ scrollTo: undefined });
+          // SwipeListView wraps a FlatList, so its ref has scrollToEnd()
+          listRef.current?.scrollToEnd({ animated: true });
+          router.setParams({ scrollTo: undefined }); // clear flag
         });
       }
     }, [scrollTo, router])
   );
 
-  /* Refresh habits whenever the screen is focused */
+  /* ----------------------------------------------------- */
+  /*  Refresh habits each time the tab/screen gains focus  */
+  /* ----------------------------------------------------- */
   useFocusEffect(
     useCallback(() => {
       getUserHabits();
     }, [getUserHabits])
   );
 
-  /* Logout */
+  /* -------------------- Logout ------------------------- */
   const logout = async () => {
     try {
       await AsyncStorage.removeItem("userData");
@@ -58,7 +66,18 @@ export default function HomeScreen() {
     }
   };
 
-  /* ───────────── render ───────────── */
+  /* ---------------- Handlers for swipe actions --------- */
+  const onDelete = async (id) => {
+    await deleteHabit(id);        // update server / context
+    getUserHabits();              // refresh list
+  };
+
+  const onComplete = async (id) => {
+    await completeHabit(id);      // mark as done
+    getUserHabits();
+  };
+
+  /* ---------------------------- render ---------------------------- */
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -75,32 +94,52 @@ export default function HomeScreen() {
       {userHabits.length === 0 ? (
         <Text style={styles.noHabitText}>Ouch! No habit found 🙃</Text>
       ) : (
-        <ScrollView
-          ref={scrollRef}
+        <SwipeListView
+          ref={listRef}
+          data={userHabits}
+          keyExtractor={(item) => item._id ?? item.title}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 24 }}
-        >
-          {userHabits.map((habit) => (
-            <View
-              style={styles.card}
-              key={habit._id ?? habit.title}
-            >
-              <Text style={styles.title}>{habit.title}</Text>
-              <Text style={styles.description}>{habit.description}</Text>
+          /* visible row -------------------------------------------------- */
+          ListHeaderComponent={<Text>Start your day {`${user?.username}`}💪</Text>}
+          ListFooterComponent={<Text>For you're a champion 💪</Text>}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.description}>{item.description}</Text>
 
               <View style={styles.cardFooter}>
                 <View style={styles.streak}>
                   <FontAwesome5 name="fire" size={18} color="coral" />
                   <Text style={styles.streakText}>
-                    {habit.streak}‑day streak
+                    {item.streak}‑day streak
                   </Text>
                 </View>
 
-                <Text style={styles.frequency}>{habit.frequency}</Text>
+                <Text style={styles.frequency}>{item.frequency}</Text>
               </View>
             </View>
-          ))}
-        </ScrollView>
+          )}
+          /* hidden row (swipe actions) ----------------------------------- */
+          renderHiddenItem={({ item }) => (
+            <View style={styles.hiddenButtons}>
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: "green" }]}
+                onPress={() => onComplete(item._id)}
+              >
+                <FontAwesome5 name="check" size={18} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: "red" }]}
+                onPress={() => onDelete(item._id)}
+              >
+                <FontAwesome5 name="trash" size={18} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
+          leftOpenValue={75}
+          rightOpenValue={-70}
+        />
       )}
     </View>
   );
@@ -113,6 +152,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#fff",
   },
+  /* header */
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -133,10 +173,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
   },
-  logoutButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-  },
+  logoutButtonText: { color: "#fff", fontWeight: "600" },
+  /* empty state */
   noHabitText: {
     textAlign: "center",
     fontSize: 18,
@@ -144,6 +182,7 @@ const styles = StyleSheet.create({
     color: "#444",
     fontFamily: "cursive",
   },
+  /* card */
   card: {
     marginTop: 20,
     padding: 14,
@@ -170,6 +209,22 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 4,
     textTransform: "capitalize",
-    overflow: "hidden",
+  },
+  /* swipe buttons */
+  hiddenButtons: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingRight: 10,
+    marginTop: 20,  // keep same top margin as visible card
+  },
+  actionButton: {
+    width: 70,
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 6,
+    marginLeft: 10,
   },
 });

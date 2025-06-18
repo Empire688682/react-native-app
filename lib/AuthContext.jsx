@@ -1,6 +1,7 @@
 import React, { useContext, createContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import { useRouter } from "expo-router";
 
 // Create context with default value
 const AuthContext = createContext(null);
@@ -9,6 +10,7 @@ export function AuthProvider({ children }){
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userHabits, setUserHabits] = useState([]);
+  const router = useRouter();
 
    useEffect(()=>{
     const loadUserData = async () =>{
@@ -56,6 +58,7 @@ export function AuthProvider({ children }){
   return (
     <AuthContext.Provider value={{
     user,
+    router,
     isAuthenticated,
     setIsAuthenticated,
     refresh,
