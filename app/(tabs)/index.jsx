@@ -22,7 +22,7 @@ export default function HomeScreen() {
     setIsAuthenticated,
     getUserHabits,
     userHabits = [],
-    deleteHabit,         // ⬅️ expose these from your context / API helpers
+    deleteHabit,       
     completeHabit,
     user
   } = useAuthContext();
@@ -32,8 +32,8 @@ export default function HomeScreen() {
   /* ------------------------------------------------------------------ */
   /*  Auto‑scroll to bottom when the screen receives  ?scrollTo=bottom  */
   /* ------------------------------------------------------------------ */
-  const listRef = useRef(null);                 // ref to the SwipeListView
-  const { scrollTo } = useLocalSearchParams();  // e.g. "bottom"
+  const listRef = useRef(null);     
+  const { scrollTo } = useLocalSearchParams();
 
   useFocusEffect(
     useCallback(() => {
