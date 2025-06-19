@@ -1,5 +1,5 @@
 // app/(tabs)/index.jsx
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -68,14 +68,18 @@ export default function HomeScreen() {
 
   /* ---------------- Handlers for swipe actions --------- */
   const onDelete = async (id) => {
-    await deleteHabit(id);        // update server / context
-    getUserHabits();              // refresh list
+    await deleteHabit(id);   
+    getUserHabits();      
   };
 
   const onComplete = async (id) => {
-    await completeHabit(id);      // mark as done
+    await completeHabit(id);    
     getUserHabits();
   };
+
+  const today = new Date().toISOString().slice(0, 10); 
+
+
 
   /* ---------------------------- render ---------------------------- */
   return (
@@ -101,7 +105,7 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 24 }}
           /* visible row -------------------------------------------------- */
-          ListHeaderComponent={<Text>Start your day {`${user?.username}`}💪</Text>}
+          ListHeaderComponent={<Text>Start your day {`${user?.username}`}💪 {today}</Text>}
           ListFooterComponent={<Text>For you're a champion 💪</Text>}
           renderItem={({ item }) => (
             <View style={styles.card}>
@@ -127,7 +131,11 @@ export default function HomeScreen() {
                 style={[styles.actionButton, { backgroundColor: "green" }]}
                 onPress={() => onComplete(item._id)}
               >
-                <FontAwesome5 name="check" size={18} color="#fff" />
+                 {
+                  item.lastCompleted === today ? "Completed"
+                  :
+                  <FontAwesome5 name="check" size={18} color="#fff" />
+                }
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.actionButton, { backgroundColor: "red" }]}

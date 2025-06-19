@@ -53,7 +53,32 @@ export function AuthProvider({ children }){
       } catch (error) {
         console.log("getUserHabitsError:", error)
       };
-    }
+    };
+
+    const deleteHabit = async(habitId) =>{
+      try {
+        const data = {
+          userId:user.id,
+          habitId:habitId
+        }
+       await axios.post(process.env.EXPO_PUBLIC_API_URL + `habit/delete`, data);
+      } catch (error) {
+        console.log("error:", error)
+      }
+    }; 
+
+    const completeHabit = async(habitId) =>{
+      try {
+        const data = {
+          userId:user.id,
+          habitId:habitId
+        }
+       const response = await axios.post(process.env.EXPO_PUBLIC_API_URL + `habit/complete`, data);
+       console.log("completeHabit:", response)
+      } catch (error) {
+        console.log("error:", error)
+      }
+    };  
 
   return (
     <AuthContext.Provider value={{
@@ -64,7 +89,9 @@ export function AuthProvider({ children }){
     refresh,
     getUserHabits,
     setUserHabits,
-    userHabits
+    userHabits,
+    deleteHabit,       
+    completeHabit,
   }}>
       {children}
     </AuthContext.Provider>
