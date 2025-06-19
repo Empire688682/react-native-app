@@ -1,5 +1,4 @@
-// app/(tabs)/index.jsx
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -16,36 +15,38 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SwipeListView } from "react-native-swipe-list-view";
 import { useAuthContext } from "@/lib/AuthContext";
+import { format, isSameDay } from 'date-fns';
 
 export default function HomeScreen() {
   const {
     setIsAuthenticated,
     getUserHabits,
     userHabits = [],
-    deleteHabit,       
+    deleteHabit,
     completeHabit,
     user
   } = useAuthContext();
+
+  console.log(userHabits)
 
   const router = useRouter();
 
   /* ------------------------------------------------------------------ */
   /*  Auto‑scroll to bottom when the screen receives  ?scrollTo=bottom  */
   /* ------------------------------------------------------------------ */
-  const listRef = useRef(null);     
+  const listRef = useRef(null);
   const { scrollTo } = useLocalSearchParams();
 
-  useFocusEffect(
-    useCallback(() => {
-      if (scrollTo === "bottom") {
-        requestAnimationFrame(() => {
-          // SwipeListView wraps a FlatList, so its ref has scrollToEnd()
-          listRef.current?.scrollToEnd({ animated: true });
-          router.setParams({ scrollTo: undefined }); // clear flag
-        });
-      }
-    }, [scrollTo, router])
-  );
+useFocusEffect(
+  useCallback(() => {
+    if (scrollTo === "bottom") {
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToEnd?.({ animated: true }); 
+        router.setParams({ scrollTo: undefined });
+      });
+    }
+  }, [scrollTo, router])
+);
 
   /* ----------------------------------------------------- */
   /*  Refresh habits each time the tab/screen gains focus  */
@@ -68,18 +69,16 @@ export default function HomeScreen() {
 
   /* ---------------- Handlers for swipe actions --------- */
   const onDelete = async (id) => {
-    await deleteHabit(id);   
-    getUserHabits();      
-  };
-
-  const onComplete = async (id) => {
-    await completeHabit(id);    
+    await deleteHabit(id);
     getUserHabits();
   };
 
-  const today = new Date().toISOString().slice(0, 10); 
+  const onComplete = async (id) => {
+    await completeHabit(id);
+    getUserHabits();
+  };
 
-
+  const today = new Date();
 
   /* ---------------------------- render ---------------------------- */
   return (
@@ -105,10 +104,15 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 24 }}
           /* visible row -------------------------------------------------- */
-          ListHeaderComponent={<Text>Start your day {`${user?.username}`}💪 {today}</Text>}
+          ListHeaderComponent={
+            <Text>Start your day {`${user?.username}`}💪 {format(today, 'MMM dd, yyyy')}</Text>
+          }
           ListFooterComponent={<Text>For you're a champion 💪</Text>}
           renderItem={({ item }) => (
-            <View style={styles.card}>
+            <View style={[
+              styles.card,
+              item.lastCompleted && isSameDay(new Date(item.lastCompleted), today) && styles.cardCompleted
+            ]}>
               <Text style={styles.title}>{item.title}</Text>
               <Text style={styles.description}>{item.description}</Text>
 
@@ -131,10 +135,12 @@ export default function HomeScreen() {
                 style={[styles.actionButton, { backgroundColor: "green" }]}
                 onPress={() => onComplete(item._id)}
               >
-                 {
-                  item.lastCompleted === today ? "Completed"
-                  :
-                  <FontAwesome5 name="check" size={18} color="#fff" />
+                {
+                  // Check if lastCompleted is today using date comparison
+                  item.lastCompleted && isSameDay(new Date(item.lastCompleted), today) ? 
+                    <Text style={{ color: '#fff', fontSize: 12 }}>Completed</Text>
+                    :
+                    <FontAwesome5 name="check" size={18} color="#fff" />
                 }
               </TouchableOpacity>
               <TouchableOpacity
@@ -200,6 +206,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
+    marginBottom:18
+  },
+    cardCompleted: {
+    marginTop: 20,
+    padding: 14,
+    borderRadius: 8,
+    backgroundColor: "#e8f5e8",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    borderLeftWidth: 4,
+    borderLeftColor: "#4CAF50",
   },
   title: { fontSize: 16, fontWeight: "700", marginBottom: 6 },
   description: { marginBottom: 12, color: "#555" },
@@ -225,7 +244,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingRight: 10,
-    marginTop: 20,  // keep same top margin as visible card
+    marginTop: 20,
+    marginBottom: 18
   },
   actionButton: {
     width: 70,

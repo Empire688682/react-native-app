@@ -47,7 +47,6 @@ export default function AddHabit() {
         setFrequency("daily");
         showToast("Habit Added");
         router.push({pathname:"/", params:{scrollTo:"bottom"}});
-        window.scrollTo(-100, 0);
       }
       
     } catch (error) {
