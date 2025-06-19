@@ -21,7 +21,6 @@ export default function RootLayout() {
         tabBarInactiveTintColor: "#666666"
     }}>
         <Tabs.Screen name="index" options={{ title: "Today's Habit", tabBarIcon: ({color, size})=><MaterialIcons name="date-range" size={size} color={color} /> }} />
-        <Tabs.Screen name="login" options={{ title: "Login", tabBarIcon: ({color})=> <AntDesign name="login" size={24} color={color} /> }} />
         <Tabs.Screen name="streaks" options={{ title: "Streaks", tabBarIcon: ({color})=> <AntDesign name="info" size={24} color={color} /> }} />
         <Tabs.Screen name="add-habit" options={{ title: "Add Habit", tabBarIcon: ({color})=> <AntDesign name="plus" size={24} color={color} /> }} />
     </Tabs>;
