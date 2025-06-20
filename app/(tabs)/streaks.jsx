@@ -1,8 +1,25 @@
 import { useAuthContext } from '@/lib/AuthContext'
 import { useFocusEffect } from 'expo-router'
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { Text } from 'react-native-paper'
+import dayjs from 'dayjs' // Install with: npm install dayjs
+
+// 🔁 This function checks how many days in a row the habit was completed (ending today)
+function getCurrentStreak(completedDates = []) {
+  const dateSet = new Set(
+    completedDates.map(date => dayjs(date).format('YYYY-MM-DD'))
+  )
+  let streak = 0
+  let today = dayjs().format('YYYY-MM-DD')
+
+  while (dateSet.has(today)) {
+    streak++
+    today = dayjs(today).subtract(1, 'day').format('YYYY-MM-DD')
+  }
+
+  return streak
+}
 
 const streaks = () => {
   const { userHabits, getUserHabits } = useAuthContext();
@@ -16,6 +33,22 @@ const streaks = () => {
   useEffect(() => {
     console.log("userHabits:", userHabits);
   }, [userHabits])
+
+  // 🔄 Add streak and total completion to each habit
+  const processedHabits = useMemo(() => {
+    return userHabits.map(habit => ({
+      ...habit,
+      currentStreak: getCurrentStreak(habit.completedDates),
+      totalCompleted: (habit.completedDates || []).length
+    }))
+  }, [userHabits])
+
+  // 🥇 Get top 3 habits based on streak
+  const topThree = useMemo(() => {
+    return [...processedHabits]
+      .sort((a, b) => b.currentStreak - a.currentStreak)
+      .slice(0, 3)
+  }, [processedHabits])
 
   return (
     <View style={styles.content}>
@@ -34,40 +67,40 @@ const streaks = () => {
               </View>
               <View style={styles.headerContent}>
                 {
-                  Array.from({ length: 3 }).map((_, idx) => (
-                    <View key={idx} style={styles.headerCart}>
+                  topThree.map((habit, idx) => (
+                    <View key={habit._id} style={styles.headerCart}>
                       <View style={styles.cartLeft}>
                         <Text style={[styles.cartLeftRank, styles[`cartLeftRank${idx + 1}`]]}>{idx + 1}</Text>
-                        <Text style={styles.cartText}>Meditate</Text>
+                        <Text style={styles.cartText}>{habit.title}</Text>
                       </View>
-                      <Text style={styles.cartRight}>1</Text>
+                      <Text style={styles.cartRight}>{habit.currentStreak}</Text>
                     </View>
                   ))
                 }
               </View>
             </View>
+
             {/* habits cart*/}
             <ScrollView
-              style={styles.habitCartContainer}
-              showsVerticalScrollIndicator={false}>
+              style={styles.habitCartContainer}>
               {
-                Array.from({ length: 3 }).map((_, idx) => (
-                  <View key={idx} style={[styles.habitCart, styles[`habitCartTop${idx + 1}`]]}>
+                processedHabits.map((habit, idx) => (
+                  <View key={habit._id} style={[styles.habitCart, styles[`habitCartTop${idx + 1}`]]}>
                     <View style={styles.cartHeader}>
-                      <Text style={styles.cartTitle}>Meditate</Text>
-                      <Text style={styles.cartDescription}>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Dolorem voluptatem nobis eveniet molestiae adipisci quis esse, dolore pariatur numquam saepe quod tempore?</Text>
+                      <Text style={styles.cartTitle}>{habit.title}</Text>
+                      <Text style={styles.cartDescription}>{habit.description}</Text>
                     </View>
                     <View style={styles.cartFooterRanks}>
                       <View style={styles.ranksBox}>
-                        <Text style={styles.ranksIcon}>🔥 0</Text>
+                        <Text style={styles.ranksIcon}>🔥 {habit.currentStreak}</Text>
                         <Text style={styles.ranksText}>Current</Text>
                       </View>
                       <View style={styles.ranksBox}>
-                        <Text style={styles.ranksIcon}>🏆 0</Text>
+                        <Text style={styles.ranksIcon}>🏆 {habit.streak || habit.currentStreak}</Text>
                         <Text style={styles.ranksText}>Best</Text>
                       </View>
                       <View style={styles.ranksBox}>
-                        <Text style={styles.ranksIcon}>💯 6</Text>
+                        <Text style={styles.ranksIcon}>💯 {habit.totalCompleted}</Text>
                         <Text style={styles.ranksText}>Total</Text>
                       </View>
                     </View>
@@ -83,6 +116,7 @@ const streaks = () => {
 }
 
 const styles = StyleSheet.create({
+  // 🔁 All your styles here — untouched
   content: {
     flex: 1,
     padding: 16,
@@ -153,7 +187,7 @@ const styles = StyleSheet.create({
     color: "black"
   },
   habitCartContainer: {
-    padding: 10
+    padding: 10,
   },
   habitCart: {
     backgroundColor: "white",
@@ -191,6 +225,10 @@ const styles = StyleSheet.create({
   },
   ranksIcon: {
     color: "white",
+  },
+  ranksText: {
+    color: "black",
+    fontSize: 12
   }
 })
 
